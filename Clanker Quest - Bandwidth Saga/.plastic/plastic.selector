@@ -1,0 +1,4 @@
+repository "Clanker Quest - Bandwidth Saga/Clanker Quest - Bandwidth Saga@3574345825929@cloud"
+  path "/"
+    br "/main"
+    co "/main"
