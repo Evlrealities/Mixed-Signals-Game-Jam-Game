@@ -601,8 +601,8 @@ PlayerSettings:
   editorAssembliesCompatibilityLevel: 1
   m_RenderingPath: 1
   m_MobileRenderingPath: 1
-  metroPackageName: Clanker Quest - Bandwidth Saga
-  metroPackageVersion: 
+  metroPackageName: ClankerQuest-BandwidthSaga
+  metroPackageVersion: 1.0.0.0
   metroCertificatePath: 
   metroCertificatePassword: 
   metroCertificateSubject: 
@@ -610,7 +610,7 @@ PlayerSettings:
   metroCertificateNotAfter: 0000000000000000
   metroApplicationDescription: Clanker Quest - Bandwidth Saga
   wsaImages: {}
-  metroTileShortName: 
+  metroTileShortName: Clanker Quest - Bandwidth Saga
   metroTileShowName: 0
   metroMediumTileShowName: 0
   metroLargeTileShowName: 0
@@ -677,7 +677,7 @@ PlayerSettings:
   qnxGraphicConfPath: 
   apiCompatibilityLevel: 6
   captureStartupLogs: {}
-  activeInputHandler: 1
+  activeInputHandler: 2
   windowsGamepadBackendHint: 0
   cloudProjectId: 32f89b13-dd15-44d9-80aa-a4e0618751ec
   framebufferDepthMemorylessMode: 0
