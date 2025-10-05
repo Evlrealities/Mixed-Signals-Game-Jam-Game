@@ -10,9 +10,10 @@ public class IsoTilemapHover_v2 : MonoBehaviour
 {
     [Header("Scene References")]
     public Grid grid;                    // Grid (Isometric)
-    public Tilemap baseTilemap;          // Your art/level map (optional for Exists check)
+    public Tilemap baseTilemap;          // Optional: for Exists check
     public Tilemap overlayTilemap;       // Highlight cursor
-    public TextMeshProUGUI coordLabel;   // UI label (Canvas)
+    public TextMeshProUGUI coordLabel;   // UI label that follows the hovered cell (Canvas)
+    public TextMeshProUGUI hudLabel;     // NEW: fixed top-left HUD readout (Canvas)
 
     [Header("Highlight Style")]
     public Color highlightColor = new Color(1f, 1f, 0f, 0.35f); // yellow, semi-transparent
@@ -21,6 +22,10 @@ public class IsoTilemapHover_v2 : MonoBehaviour
     [Header("Options")]
     public bool onlyHighlightWhereTileExists = false; // ignore empty base tiles
     public int overlaySortingOrder = 5000;            // keep this on top
+
+    [Header("HUD")]
+    [Tooltip("Format for the top-left HUD readout")]
+    public string hudFormat = "Cell: ({0}, {1})";
 
     [Header("Diagnostics")]
     public bool runSelfTestAtStart = true;
@@ -37,7 +42,6 @@ public class IsoTilemapHover_v2 : MonoBehaviour
 
         if (coordLabel) coordLabel.gameObject.SetActive(false);
 
-        // Make sure the overlay renders above everything
         var r = overlayTilemap ? overlayTilemap.GetComponent<TilemapRenderer>() : null;
         if (r) r.sortingOrder = overlaySortingOrder;
     }
@@ -58,6 +62,9 @@ public class IsoTilemapHover_v2 : MonoBehaviour
             overlayTilemap.RefreshAllTiles();
             Debug.Log("[IsoTilemapHover] SelfTest: placed highlight at cell (0,0). Do you see a tinted diamond there?");
         }
+
+        // Ensure HUD is visible immediately (even before first mouse move)
+        if (hudLabel) hudLabel.gameObject.SetActive(true);
     }
 
     void OnDisable() => ClearHover();
@@ -75,14 +82,21 @@ public class IsoTilemapHover_v2 : MonoBehaviour
         mousePos = Input.mousePosition;
 #endif
 
-        // --- Mouse → world (hit the actual plane the base/overlay lives on) ---
+        // --- Mouse → world (plane of overlay/base) ---
         Vector3 world = MouseWorldOnTilemapPlane(cam, overlayTilemap, mousePos);
 
-        // Convert to grid cell
+        // Grid cell
         Vector3Int cell = grid.WorldToCell(world);
         if (verbose) Debug.Log($"[Hover] world:{world} cell:{cell}");
 
-        // Optional: require a real tile under cursor
+        // Top-left HUD (always-on)
+        if (hudLabel)
+        {
+            hudLabel.text = $"Mouse Position: ({cell.x}, {cell.y})";
+            if (!hudLabel.gameObject.activeSelf) hudLabel.gameObject.SetActive(true);
+        }
+
+        // Optional: require a real tile
         if (onlyHighlightWhereTileExists && baseTilemap && !baseTilemap.HasTile(cell))
         {
             ClearHover();
@@ -97,7 +111,7 @@ public class IsoTilemapHover_v2 : MonoBehaviour
         overlayTilemap.SetTile(cell, _highlightTile);
         overlayTilemap.RefreshTile(cell);
 
-        // Move + show UI label at cell center (screen space)
+        // Cursor-following label
         if (coordLabel)
         {
             Vector3 centerWorld = grid.GetCellCenterWorld(cell);
@@ -113,17 +127,15 @@ public class IsoTilemapHover_v2 : MonoBehaviour
 
     // Helpers -------------------------------------------------------------
 
-    // Robust mouse→world on the plane that the tilemaps live on (works for ortho/persp).
     private Vector3 MouseWorldOnTilemapPlane(Camera cam, Tilemap map, Vector2 mousePos)
     {
         Ray ray = cam.ScreenPointToRay(mousePos);
 
-        // Plane with normal = tilemap's forward, through its transform position
         Plane plane = new Plane(map.transform.forward, map.transform.position);
         if (plane.Raycast(ray, out float enter))
             return ray.GetPoint(enter);
 
-        // Fallback for orthographic / parallel case
+        // Fallback for orthographic / parallel
         Vector3 s = new Vector3(mousePos.x, mousePos.y, Mathf.Abs(cam.transform.position.z - map.transform.position.z));
         return cam.ScreenToWorldPoint(s);
     }
@@ -138,17 +150,15 @@ public class IsoTilemapHover_v2 : MonoBehaviour
         _lastCell = null;
         if (coordLabel && coordLabel.gameObject.activeSelf)
             coordLabel.gameObject.SetActive(false);
+        // HUD stays on; no action
     }
 
-    // Build a solid, tintable runtime Tile
     private Tile BuildHighlightTile(Color c)
     {
-        // Tiny 2x2 white texture → clean scaling on any cell size
         Texture2D tex = new Texture2D(2, 2, TextureFormat.RGBA32, false);
         tex.SetPixels(new[] { Color.white, Color.white, Color.white, Color.white });
         tex.Apply();
 
-        // Full-rect sprite; PPU doesn't matter for tilemaps
         Sprite sprite = Sprite.Create(tex, new Rect(0, 0, 2, 2), new Vector2(0.5f, 0.5f), 2f);
 
         var t = ScriptableObject.CreateInstance<Tile>();
